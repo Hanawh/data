@@ -35,7 +35,7 @@ CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
 cat2label = {cat: i for i, cat in enumerate(CLASSES)}
 # 首先得到数据的categories的关键字
 category = data['categories']
-category_id ={}
+category_id = {}
 for category_per in category:
     id = category_per['id']
     cls = category_per['name']
@@ -50,7 +50,7 @@ for images_attr in list(data.keys()):
         # 遍历每一个图像
         for data_per in data[images_attr]:
             image_name = data_per['file_name']
-            image_route = img_root+image_name 
+            image_route = os.path.join(img_root,image_name) 
             image_width = data_per['width']
             image_height = data_per['height']
             image_id = data_per['id']
@@ -65,18 +65,27 @@ for images_attr in list(data.keys()):
             path_cord =''
             if len(boundingBox_image)==0:
                 continue
-            # 输出每张boundging box的坐标信息，以及所属类信息
-            for boundingBox_per in boundingBox_image:
-                # 添加boundingBox所属类的id
+            for boundingBox_per in boundingBox_image: 
+                if boundingBox_per.get('ignore', False):
+                    continue
+                if boundingBox_per.get('iscrowd', False):
+                    continue
+                #dict_keys(['segmentation', 'area', 'iscrowd', 'image_id', 'bbox', 'category_id', 'id'])
                 id = boundingBox_per['category_id']
                 label = category_id[id]
-                # 位置信息转换，x,y,w,h转为xmin,ymin,xmax,ymax
+                # xmin,ymin,w,h->xmin,ymin,xmax,ymax
                 x = int(boundingBox_per['bbox'][0])
                 y = int(boundingBox_per['bbox'][1])
                 w = int(boundingBox_per['bbox'][2])
                 h = int(boundingBox_per['bbox'][3])
-                xmin = str(x+1)
-                ymin = str(y+1)
+                if boundingBox_per['area'] <= 0 or w < 1 or h < 1:
+                    continue
+                inter_w = max(0, min(x + w, imageID_all_info[imageID_per]['width']) - max(x, 0))
+                inter_h = max(0, min(y + h, imageID_all_info[imageID_per]['height']) - max(y, 0))
+                if inter_w * inter_h == 0:
+                    continue
+                xmin = str(x)
+                ymin = str(y)
                 xmax= str(x+w)
                 ymax=str(y+h)
                 boundingBox_cord += xmin +','+ymin+','+xmax+','+ymax+','+str(label)+' '
